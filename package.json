@@ -12,15 +12,15 @@
   },
   "keywords": [],
   "author": "",
-  "license": "BSD 2-clause",
+  "license": "BSD-2-clause",
   "bugs": {
     "url": "https://github.com/hkphysics/revshare-vault/issues"
   },
   "homepage": "https://github.com/hkphysics/revshare-vault#readme",
   "dependencies": {
-    "hardhat": "^2.22.19"
-  },
-  "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox-viem": "^3.0.0"
+    "@openzeppelin/contracts": "^5.2.0",
+    "hardhat": "^2.22.19",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.2"
   }
 }
