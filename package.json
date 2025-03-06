@@ -16,5 +16,11 @@
   "bugs": {
     "url": "https://github.com/hkphysics/revshare-vault/issues"
   },
-  "homepage": "https://github.com/hkphysics/revshare-vault#readme"
+  "homepage": "https://github.com/hkphysics/revshare-vault#readme",
+  "dependencies": {
+    "hardhat": "^2.22.19"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox-viem": "^3.0.0"
+  }
 }
