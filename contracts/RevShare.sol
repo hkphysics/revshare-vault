@@ -53,8 +53,10 @@ contract RevShareToken is ERC20, AccessControl {
 	uint256 tokensDistributed;
     }
 
+
+    error ConstructorFailed();
     error AccessFailed();
-    IERC20 public token;
+    IERC20 public immutable token;
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
     bytes32 public constant DISTRIBUTE_ROLE = keccak256("DISTRIBUTE_ROLE");
@@ -67,6 +69,8 @@ contract RevShareToken is ERC20, AccessControl {
      * @param token_ Address of the token to be used for distribution.
      */
     constructor(address token_) ERC20("RevShare", "RBF") {
+        if (token_ == address(0))
+	    revert ConstructorFailed();
 	token = IERC20(token_);
 	_grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
@@ -78,10 +82,7 @@ contract RevShareToken is ERC20, AccessControl {
      * Requirements:
      * - Caller must have the MINTER_ROLE.
      */
-    function mint(address to, uint256 amount) public {
-        if (!hasRole(MINTER_ROLE, msg.sender)) {
-	    revert AccessFailed();
-	}
+    function mint(address to, uint256 amount) public onlyRole(MINTER_ROLE) {
         _mint(to, amount);
     }
 
@@ -92,10 +93,7 @@ contract RevShareToken is ERC20, AccessControl {
      * Requirements:
      * - Caller must have the BURNER_ROLE.
      */
-    function burn(address from, uint256 amount) public {
-        if (!hasRole(BURNER_ROLE, msg.sender)) {
-	    revert AccessFailed();
-	}
+    function burn(address from, uint256 amount) public onlyRole(BURNER_ROLE) {
         _burn(from, amount);
     }
 
@@ -131,10 +129,7 @@ contract RevShareToken is ERC20, AccessControl {
      * Requirements:
      * - Caller must have the DISTRIBUTE_ROLE.
      */
-    function distribute(uint256 amount) public {
-	if (!hasRole(DISTRIBUTE_ROLE, msg.sender)) {
-	    revert AccessFailed();
-	}
+    function distribute(uint256 amount) public onlyRole(DISTRIBUTE_ROLE) {
 	totalPool.tokensDistributed += amount;
 	totalPool.weightedAverage += totalSupply() * amount;
     }
@@ -144,17 +139,13 @@ contract RevShareToken is ERC20, AccessControl {
      * Requirements:
      * - Caller must have the CLAIM_ROLE.
      */
-    function claim() public {
-        if (!hasRole(CLAIM_ROLE, msg.sender)) {
-	    revert AccessFailed();
-	}
+    function claim() public onlyRole(CLAIM_ROLE) {
 	_updateUserPool(msg.sender);
 	uint256 tokensToBeClaimed = userPool[msg.sender].weightedAverage *
 	    totalPool.tokensDistributed / totalPool.weightedAverage -
 	    userPool[msg.sender].tokensClaimed;
-	if (tokensToBeClaimed >= token.balanceOf(address(this))) {
-	    tokensToBeClaimed = token.balanceOf(address(this));
-	}
+        tokensToBeClaimed = tokensToBeClaimed > token.balanceOf(address(this)) ?
+	    token.balanceOf(address(this)) : tokensToBeClaimed;
 	userPool[msg.sender].tokensClaimed += tokensToBeClaimed;
 	token.transfer(msg.sender, tokensToBeClaimed);
     }
