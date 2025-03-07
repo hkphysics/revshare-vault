@@ -53,9 +53,7 @@ contract RevShareToken is ERC20, AccessControl {
 	uint256 tokensDistributed;
     }
 
-
     error ConstructorFailed();
-    error AccessFailed();
     IERC20 public immutable token;
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
