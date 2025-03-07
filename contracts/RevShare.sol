@@ -102,9 +102,9 @@ contract RevShareToken is ERC20, AccessControl {
      * @param value Amount of tokens being transferred.
      */
     function _update(address from,  address to, uint256 value)  internal virtual override {
-	super._update(from,  to,  value);
 	_updateUserPool(from);
 	_updateUserPool(to);
+        super._update(from,  to,  value);
     }
 
     /**
@@ -138,6 +138,7 @@ contract RevShareToken is ERC20, AccessControl {
      * - Caller must have the CLAIM_ROLE.
      */
     function claim() public onlyRole(CLAIM_ROLE) {
+        if ( totalPool.weightedAverage == 0 ) return;
 	_updateUserPool(msg.sender);
 	uint256 tokensToBeClaimed = userPool[msg.sender].weightedAverage *
 	    totalPool.tokensDistributed / totalPool.weightedAverage -
