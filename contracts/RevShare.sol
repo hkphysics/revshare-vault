@@ -54,7 +54,7 @@ contract RevShareToken is ERC20, AccessControl {
     }
 
     error ConstructorFailed();
-    IERC20 public immutable token;
+    IERC20 public immutable TOKEN;
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
     bytes32 public constant DISTRIBUTE_ROLE = keccak256("DISTRIBUTE_ROLE");
@@ -69,7 +69,7 @@ contract RevShareToken is ERC20, AccessControl {
     constructor(address token_) ERC20("RevShare", "RBF") {
         if (token_ == address(0))
 	    revert ConstructorFailed();
-	token = IERC20(token_);
+	TOKEN = IERC20(token_);
 	_grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
@@ -142,9 +142,9 @@ contract RevShareToken is ERC20, AccessControl {
 	uint256 tokensToBeClaimed = userPool[msg.sender].weightedAverage *
 	    totalPool.tokensDistributed / totalPool.weightedAverage -
 	    userPool[msg.sender].tokensClaimed;
-        tokensToBeClaimed = tokensToBeClaimed > token.balanceOf(address(this)) ?
-	    token.balanceOf(address(this)) : tokensToBeClaimed;
+        tokensToBeClaimed = tokensToBeClaimed > TOKEN.balanceOf(address(this)) ?
+	    TOKEN.balanceOf(address(this)) : tokensToBeClaimed;
 	userPool[msg.sender].tokensClaimed += tokensToBeClaimed;
-	token.transfer(msg.sender, tokensToBeClaimed);
+	TOKEN.transfer(msg.sender, tokensToBeClaimed);
     }
 }
