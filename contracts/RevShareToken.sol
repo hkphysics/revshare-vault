@@ -11,6 +11,15 @@ import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol"
  * @title RevShareToken
  * @dev This contract distributes revenue to token holders using a modified MasterChef algorithm.
 
+This token deals with two issues.
+
+1) You need an algorithm that avoids looping over all account in order
+to distribute tokens scalably
+
+2) You don't want to hold all of the tokens in the contract, but
+rather transfer tokens as needed
+
+
 This is a RevShare contract that distributes revenue between token holders.
 
 The contract has two features:
