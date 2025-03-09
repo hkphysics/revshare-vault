@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
 
 
@@ -51,6 +52,7 @@ the contract, and distribute those to the user
 */
 
 contract RevShareToken is ERC20, AccessControl {
+    using SafeERC20 for IERC20;
     struct UserPool {
         uint256 weightedAverage;
         uint256 lastCalc;
@@ -155,6 +157,6 @@ contract RevShareToken is ERC20, AccessControl {
         tokensToBeClaimed = tokensToBeClaimed > TOKEN.balanceOf(address(this)) ?
 	    TOKEN.balanceOf(address(this)) : tokensToBeClaimed;
 	userPool[msg.sender].tokensClaimed += tokensToBeClaimed;
-	TOKEN.transfer(msg.sender, tokensToBeClaimed);
+	TOKEN.safeTransfer(msg.sender, tokensToBeClaimed);
     }
 }
