@@ -3,6 +3,7 @@
 pragma solidity ^0.8.24;
 
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { ERC20Permit } from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
@@ -51,7 +52,7 @@ the contract, and distribute those to the user
 
 */
 
-contract RevShareToken is ERC20, AccessControl {
+contract RevShareToken is ERC20, AccessControl, ERC20Permit {
     using SafeERC20 for IERC20;
     struct UserPool {
         uint256 weightedAverage;
@@ -77,7 +78,8 @@ contract RevShareToken is ERC20, AccessControl {
      * @dev Constructor to initialize the contract and set the token address.
      * @param token_ Address of the token to be used for distribution.
      */
-    constructor(address token_) ERC20("RevShare", "RBF") {
+    constructor(address token_) ERC20("RevShare", "RBF")
+    ERC20Permit("RevShare") {
         if (token_ == address(0))
 	    revert ConstructorFailed();
 	TOKEN = IERC20(token_);
