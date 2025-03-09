@@ -74,12 +74,20 @@ contract RevShareToken is ERC20, AccessControl, ERC20Permit {
     mapping(address => UserPool) public userPool;
     TotalPool public totalPool;
 
+    // Emit when rewards are distributed to a pool
+    event TokensDistributed(uint256 amount, uint256 timestamp);
+
+    // Emit when a user claims tokens
+    event TokensClaimed(address indexed user, uint256 claimed, uint256 transferred, uint256 timestamp);
+
     /**
      * @dev Constructor to initialize the contract and set the token address.
+     * @param name_ name of token
+     * @param symbol_ Symbol of token
      * @param token_ Address of the token to be used for distribution.
      */
-    constructor(address token_) ERC20("RevShare", "RBF")
-    ERC20Permit("RevShare") {
+    constructor(string memory name_, string memory symbol_, address token_) ERC20(name_, symbol_)
+    ERC20Permit(name_) {
         if (token_ == address(0))
 	    revert ConstructorFailed();
 	TOKEN = IERC20(token_);
@@ -143,6 +151,7 @@ contract RevShareToken is ERC20, AccessControl, ERC20Permit {
     function distribute(uint256 amount) public onlyRole(DISTRIBUTE_ROLE) {
 	totalPool.tokensDistributed += amount;
 	totalPool.weightedAverage += totalSupply() * amount;
+	emit TokensDistributed(amount, block.timestamp);
     }
 
     /**
@@ -156,9 +165,11 @@ contract RevShareToken is ERC20, AccessControl, ERC20Permit {
 	uint256 tokensToBeClaimed = userPool[msg.sender].weightedAverage *
 	    totalPool.tokensDistributed / totalPool.weightedAverage -
 	    userPool[msg.sender].tokensClaimed;
-        tokensToBeClaimed = tokensToBeClaimed > TOKEN.balanceOf(address(this)) ?
+        uint256 tokensToBeTransferred = tokensToBeClaimed > TOKEN.balanceOf(address(this)) ?
 	    TOKEN.balanceOf(address(this)) : tokensToBeClaimed;
-	userPool[msg.sender].tokensClaimed += tokensToBeClaimed;
-	TOKEN.safeTransfer(msg.sender, tokensToBeClaimed);
+	userPool[msg.sender].tokensClaimed += tokensToBeTransferred;
+	TOKEN.safeTransfer(msg.sender, tokensToBeTransferred);
+	emit TokensClaimed(msg.sender, tokensToBeClaimed,
+			   tokensToBeTransferred, block.timestamp);
     }
 }

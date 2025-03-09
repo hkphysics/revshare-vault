@@ -20,7 +20,8 @@ describe("RevShareToken", function () {
         mockERC20 = await MockERC20.deploy(ethers.parseEther("10000"));
 
         RevShareToken = await ethers.getContractFactory("RevShareToken");
-        revShareToken = await RevShareToken.deploy(await mockERC20.getAddress());
+        revShareToken = await RevShareToken.deploy(
+	    "RevShareToken", "RBF", await mockERC20.getAddress());
 
         await revShareToken.grantRole(await revShareToken.MINTER_ROLE(), owner.address);
         await revShareToken.grantRole(await revShareToken.BURNER_ROLE(), owner.address);
