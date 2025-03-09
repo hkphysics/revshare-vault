@@ -25,8 +25,8 @@ describe("RevShareToken", function () {
 
         await revShareToken.grantRole(await revShareToken.MINTER_ROLE(), owner.address);
         await revShareToken.grantRole(await revShareToken.BURNER_ROLE(), owner.address);
-        await revShareToken.grantRole(await revShareToken.DISTRIBUTE_ROLE(), owner.address);
-        await revShareToken.grantRole(await revShareToken.CLAIM_ROLE(), addr1.address);
+        await revShareToken.grantRole(await revShareToken.DISTRIBUTOR_ROLE(), owner.address);
+        await revShareToken.grantRole(await revShareToken.CLAIMER_ROLE(), addr1.address);
     });
 
     it("should calculate exact distribution amounts", async function () {
@@ -72,7 +72,7 @@ describe("RevShareToken", function () {
         await revShareToken.distribute(ethers.parseEther("100"));
 
         await revShareToken.connect(addr1).claim();
-	await revShareToken.grantRole(await revShareToken.CLAIM_ROLE(), addr2.address);
+	await revShareToken.grantRole(await revShareToken.CLAIMER_ROLE(), addr2.address);
         await revShareToken.connect(addr2).claim();
 
         expect(await mockERC20.balanceOf(addr1.address)).to.equal(ethers.parseEther("150"));

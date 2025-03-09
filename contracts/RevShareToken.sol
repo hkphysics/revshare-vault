@@ -70,8 +70,8 @@ contract RevShareToken is ERC20, AccessControl, ERC20Permit, ReentrancyGuard {
     IERC20 public immutable TOKEN;
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
-    bytes32 public constant DISTRIBUTE_ROLE = keccak256("DISTRIBUTE_ROLE");
-    bytes32 public constant CLAIM_ROLE = keccak256("CLAIM_ROLE");
+    bytes32 public constant DISTRIBUTOR_ROLE = keccak256("DISTRIBUTOR_ROLE");
+    bytes32 public constant CLAIMER_ROLE = keccak256("CLAIMER_ROLE");
     mapping(address => UserPool) public userPool;
     TotalPool public totalPool;
 
@@ -147,9 +147,9 @@ contract RevShareToken is ERC20, AccessControl, ERC20Permit, ReentrancyGuard {
      * @dev Distributes a specified amount of tokens to the total pool.
      * @param amount Amount of tokens to distribute.
      * Requirements:
-     * - Caller must have the DISTRIBUTE_ROLE.
+     * - Caller must have the DISTRIBUTOR_ROLE.
      */
-    function distribute(uint256 amount) public nonReentrant onlyRole(DISTRIBUTE_ROLE) {
+    function distribute(uint256 amount) public nonReentrant onlyRole(DISTRIBUTOR_ROLE) {
 	totalPool.tokensDistributed += amount;
 	totalPool.weightedAverage += totalSupply() * amount;
 	emit TokensDistributed(amount, block.timestamp);
@@ -158,9 +158,9 @@ contract RevShareToken is ERC20, AccessControl, ERC20Permit, ReentrancyGuard {
     /**
      * @dev Allows users to claim their tokens based on their share.
      * Requirements:
-     * - Caller must have the CLAIM_ROLE.
+     * - Caller must have the CLAIMER_ROLE.
      */
-    function claim() public nonReentrant onlyRole(CLAIM_ROLE) {
+    function claim() public nonReentrant onlyRole(CLAIMER_ROLE) {
         if ( totalPool.weightedAverage == 0 ) return;
 	_updateUserPool(msg.sender);
 	uint256 tokensToBeClaimed = userPool[msg.sender].weightedAverage *
