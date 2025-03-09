@@ -7,6 +7,7 @@ import { ERC20Permit } from "@openzeppelin/contracts/token/ERC20/extensions/ERC2
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 
 /**
@@ -52,7 +53,7 @@ the contract, and distribute those to the user
 
 */
 
-contract RevShareToken is ERC20, AccessControl, ERC20Permit {
+contract RevShareToken is ERC20, AccessControl, ERC20Permit, ReentrancyGuard {
     using SafeERC20 for IERC20;
     struct UserPool {
         uint256 weightedAverage;
@@ -101,7 +102,7 @@ contract RevShareToken is ERC20, AccessControl, ERC20Permit {
      * Requirements:
      * - Caller must have the MINTER_ROLE.
      */
-    function mint(address to, uint256 amount) public onlyRole(MINTER_ROLE) {
+    function mint(address to, uint256 amount) public nonReentrant onlyRole(MINTER_ROLE) {
         _mint(to, amount);
     }
 
@@ -112,7 +113,7 @@ contract RevShareToken is ERC20, AccessControl, ERC20Permit {
      * Requirements:
      * - Caller must have the BURNER_ROLE.
      */
-    function burn(address from, uint256 amount) public onlyRole(BURNER_ROLE) {
+    function burn(address from, uint256 amount) public nonReentrant onlyRole(BURNER_ROLE) {
         _burn(from, amount);
     }
 
@@ -148,7 +149,7 @@ contract RevShareToken is ERC20, AccessControl, ERC20Permit {
      * Requirements:
      * - Caller must have the DISTRIBUTE_ROLE.
      */
-    function distribute(uint256 amount) public onlyRole(DISTRIBUTE_ROLE) {
+    function distribute(uint256 amount) public nonReentrant onlyRole(DISTRIBUTE_ROLE) {
 	totalPool.tokensDistributed += amount;
 	totalPool.weightedAverage += totalSupply() * amount;
 	emit TokensDistributed(amount, block.timestamp);
@@ -159,7 +160,7 @@ contract RevShareToken is ERC20, AccessControl, ERC20Permit {
      * Requirements:
      * - Caller must have the CLAIM_ROLE.
      */
-    function claim() public onlyRole(CLAIM_ROLE) {
+    function claim() public nonReentrant onlyRole(CLAIM_ROLE) {
         if ( totalPool.weightedAverage == 0 ) return;
 	_updateUserPool(msg.sender);
 	uint256 tokensToBeClaimed = userPool[msg.sender].weightedAverage *
