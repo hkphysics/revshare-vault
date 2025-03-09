@@ -32,15 +32,15 @@ different token holders.
 
 The algorithm maintains a weighted average of the tokens distributed
 
-   (weighted_average_total) = sum (tokens_distributed) * (total_tokens)
+   (total_accumulated_shares) = sum (tokens_distributed) * (total_tokens)
 
 and a weighted average per user of the tokens distributed
 
-   (weighted_average_user) = sum (tokens_distributed) * (user_tokens)
+   (user_accumulated_shares) = sum (tokens_distributed) * (user_tokens)
 
 The total number of tokens which a user is entitied to is
 
-   (total_user_tokens) = (weighted_average_user) / (weighted_average_total)
+   (total_user_tokens) = (user_accumulated_shares) / (total_accumulated_shares)
           * (total_tokens_distrbuted)
 
 The number of tokens to be claimed is
@@ -56,13 +56,13 @@ the contract, and distribute those to the user
 contract RevShareToken is ERC20, AccessControl, ERC20Permit, ReentrancyGuard {
     using SafeERC20 for IERC20;
     struct UserPool {
-        uint256 weightedAverage;
-        uint256 lastCalc;
-	uint256 tokensClaimed;
+        uint256 userAccumulatedShares;
+        uint256 tokensDistributedAtLastCalc;
+	uint256 tokensTransferred;
     }
 
     struct TotalPool {
-        uint256 weightedAverage;
+        uint256 totalAccumulatedShares;
 	uint256 tokensDistributed;
     }
 
@@ -134,13 +134,11 @@ contract RevShareToken is ERC20, AccessControl, ERC20Permit, ReentrancyGuard {
      * @param addr Address of the user whose pool is being updated.
      */
     function _updateUserPool(address addr) internal {
-	if (addr == address(0)) {
-	    return;
-	}
-	userPool[addr].weightedAverage += balanceOf(addr) * (
-	    totalPool.tokensDistributed - userPool[addr].lastCalc
+	if (addr == address(0)) return;
+	userPool[addr].userAccumulatedShares += balanceOf(addr) * (
+	    totalPool.tokensDistributed - userPool[addr].tokensDistributedAtLastCalc
 	);
-	userPool[addr].lastCalc = totalPool.tokensDistributed;
+	userPool[addr].tokensDistributedAtLastCalc = totalPool.tokensDistributed;
     }
 
     /**
@@ -151,7 +149,7 @@ contract RevShareToken is ERC20, AccessControl, ERC20Permit, ReentrancyGuard {
      */
     function distribute(uint256 amount) public nonReentrant onlyRole(DISTRIBUTOR_ROLE) {
 	totalPool.tokensDistributed += amount;
-	totalPool.weightedAverage += totalSupply() * amount;
+	totalPool.totalAccumulatedShares += totalSupply() * amount;
 	emit TokensDistributed(amount, block.timestamp);
     }
 
@@ -161,14 +159,14 @@ contract RevShareToken is ERC20, AccessControl, ERC20Permit, ReentrancyGuard {
      * - Caller must have the CLAIMER_ROLE.
      */
     function claim() public nonReentrant onlyRole(CLAIMER_ROLE) {
-        if ( totalPool.weightedAverage == 0 ) return;
+        if ( totalPool.totalAccumulatedShares == 0 ) return;
 	_updateUserPool(msg.sender);
-	uint256 tokensToBeClaimed = userPool[msg.sender].weightedAverage *
-	    totalPool.tokensDistributed / totalPool.weightedAverage -
-	    userPool[msg.sender].tokensClaimed;
+	uint256 tokensToBeClaimed = userPool[msg.sender].userAccumulatedShares *
+	    totalPool.tokensDistributed / totalPool.totalAccumulatedShares -
+	    userPool[msg.sender].tokensTransferred;
         uint256 tokensToBeTransferred = tokensToBeClaimed > TOKEN.balanceOf(address(this)) ?
 	    TOKEN.balanceOf(address(this)) : tokensToBeClaimed;
-	userPool[msg.sender].tokensClaimed += tokensToBeTransferred;
+	userPool[msg.sender].tokensTransferred += tokensToBeTransferred;
 	TOKEN.safeTransfer(msg.sender, tokensToBeTransferred);
 	emit TokensClaimed(msg.sender, tokensToBeClaimed,
 			   tokensToBeTransferred, block.timestamp);

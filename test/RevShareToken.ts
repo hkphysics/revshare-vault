@@ -104,7 +104,7 @@ describe("RevShareToken", function () {
         const totalPool = await revShareToken.totalPool();
 
         expect(totalPool.tokensDistributed).to.equal(ethers.parseEther("300"));
-        expect(totalPool.weightedAverage).to.equal(ethers.parseEther("300") * ethers.parseEther("100"));
+        expect(totalPool.totalAccumulatedShares).to.equal(ethers.parseEther("300") * ethers.parseEther("100"));
     });
 
     // Keep original access control tests
