@@ -2,13 +2,11 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { RevShareToken } from "../typechain-types";
+import type  { RevShareToken, MockERC20 } from "../typechain-types";
 
 describe("RevShareToken", function () {
-    let RevShareToken: any;
-    let MockERC20: any;
     let revShareToken: RevShareToken;
-    let mockERC20: any;
+    let mockERC20: MockERC20;
     let owner: SignerWithAddress;
     let addr1: SignerWithAddress;
     let addr2: SignerWithAddress;
@@ -16,11 +14,11 @@ describe("RevShareToken", function () {
     beforeEach(async function () {
         [owner, addr1, addr2] = await ethers.getSigners();
 
-        MockERC20 = await ethers.getContractFactory("MockERC20");
-        mockERC20 = await MockERC20.deploy(ethers.parseEther("10000"));
+        MockERC20Factory = await ethers.getContractFactory("MockERC20");
+        mockERC20 = await MockERC20Factory.deploy(ethers.parseEther("10000"));
 
-        RevShareToken = await ethers.getContractFactory("RevShareToken");
-        revShareToken = await RevShareToken.deploy(
+        RevShareTokenFactory = await ethers.getContractFactory("RevShareToken");
+        revShareToken = await RevShareTokenFactory.deploy(
 	    "RevShareToken", "RBF", await mockERC20.getAddress());
 
         await revShareToken.grantRole(await revShareToken.MINTER_ROLE(), owner.address);
