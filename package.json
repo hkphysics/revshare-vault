@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/hkphysics/revshare-vault#readme",
   "dependencies": {
+    "@aave/protocol-v2": "^1.0.1",
     "@openzeppelin/contracts": "^5.2.0",
     "@typechain/ethers-v6": "^0.5.1",
     "@typechain/hardhat": "^9.1.0",
