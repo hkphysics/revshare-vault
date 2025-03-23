@@ -6,16 +6,18 @@
 pragma solidity ^0.8.0;
 
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {ERC20Burnable} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract RWAFiVault is ERC20, AccessControl, ReentrancyGuard {
+contract RWAFiVault is ERC20Burnable, AccessControl, ReentrancyGuard {
     using SafeERC20 for IERC20;
     
     bytes32 public constant GOVERNOR_ROLE = keccak256("GOVERNOR_ROLE");
-    bytes32 public constant BUNDLER_ROLE = keccak256("BUNDLER_ROLE");
+    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+    bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
     
     struct TokenConfig {
         IERC20 token;
@@ -46,10 +48,12 @@ contract RWAFiVault is ERC20, AccessControl, ReentrancyGuard {
         // Role initialization
         _grantRole(DEFAULT_ADMIN_ROLE, initialGovernor);
         _grantRole(GOVERNOR_ROLE, initialGovernor);
-        _grantRole(BUNDLER_ROLE, initialGovernor);
+        _grantRole(MINTER_ROLE, initialGovernor);
+        _grantRole(BURNER_ROLE, initialGovernor);
         
         // Role hierarchy setup
-        _setRoleAdmin(BUNDLER_ROLE, GOVERNOR_ROLE);
+        _setRoleAdmin(MINTER_ROLE, GOVERNOR_ROLE);
+        _setRoleAdmin(BURNER_ROLE, GOVERNOR_ROLE);
         _setRoleAdmin(GOVERNOR_ROLE, DEFAULT_ADMIN_ROLE);
 
         divisor = _divisor;
@@ -72,18 +76,18 @@ contract RWAFiVault is ERC20, AccessControl, ReentrancyGuard {
         token.safeTransfer(msg.sender, amount);
     }
 
-    function bundle(uint256 amount) external onlyRole(BUNDLER_ROLE) nonReentrant {
+    function mint(address account, uint256 amount) public onlyRole(MINTER_ROLE) nonReentrant returns (bool){
         for (uint256 i = 0; i < tokenConfigs.length; i++) {
             TokenConfig memory config = tokenConfigs[i];
             uint256 requiredAmount = (amount * config.weight) / divisor;
             require(escrowBalances[msg.sender][config.token] >= requiredAmount, "Insufficient tokens");
             escrowBalances[msg.sender][config.token] -= requiredAmount;
         }
-        _mint(msg.sender, amount);
-        emit Bundled(msg.sender, amount);
+        _mint(account, amount);
+	return true;
     }
 
-    function unbundle(uint256 amount) external onlyRole(BUNDLER_ROLE) nonReentrant {
+    function burn(uint256 amount) public override onlyRole(BURNER_ROLE) nonReentrant {
         _burn(msg.sender, amount);
         
         for (uint256 i = 0; i < tokenConfigs.length; i++) {
@@ -91,7 +95,15 @@ contract RWAFiVault is ERC20, AccessControl, ReentrancyGuard {
             uint256 outputAmount = (amount * config.weight) / divisor;
             escrowBalances[msg.sender][config.token] += outputAmount;
         }
-        emit Unbundled(msg.sender, amount);
+    }
+
+    function burnFrom(address account, uint256 amount) public override onlyRole(BURNER_ROLE) nonReentrant {
+        _burn(account, amount);
+        for (uint256 i = 0; i < tokenConfigs.length; i++) {
+            TokenConfig memory config = tokenConfigs[i];
+            uint256 outputAmount = (amount * config.weight) / divisor;
+            escrowBalances[account][config.token] += outputAmount;
+        }
     }
 
     function setPerformanceFee(uint256 newFee) external onlyRole(GOVERNOR_ROLE) {
