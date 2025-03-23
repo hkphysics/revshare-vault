@@ -30,13 +30,9 @@ contract RWAFiVault is ERC20Burnable, AccessControl, ReentrancyGuard {
     TokenConfig[] public tokenConfigs;
     uint256 public divisor;
     IERC20 public axcToken;
-    uint256 public performanceFee;
     
     mapping(address => mapping(IERC20 => uint256)) public escrowBalances;
     mapping(IERC20 => uint256) public totalEscrowBalance;
-
-    event FeeCollected(uint256 amount);
-    event PerformanceFeeUpdated(uint256 newFee);
 
     constructor(
         string memory name,
@@ -44,7 +40,6 @@ contract RWAFiVault is ERC20Burnable, AccessControl, ReentrancyGuard {
         TokenConfig[] memory initialTokens,
         uint256 _divisor,
         IERC20 _axcToken,
-        uint256 _performanceFee,
         address initialGovernor
     ) ERC20(name, symbol) {
         // Role initialization
@@ -60,7 +55,6 @@ contract RWAFiVault is ERC20Burnable, AccessControl, ReentrancyGuard {
 
         divisor = _divisor;
         axcToken = _axcToken;
-        performanceFee = _performanceFee;
         
         for (uint256 i = 0; i < initialTokens.length; i++) {
             tokenConfigs.push(initialTokens[i]);
@@ -130,23 +124,6 @@ contract RWAFiVault is ERC20Burnable, AccessControl, ReentrancyGuard {
             uint256 outputAmount = (amount * config.weight) / divisor;
             escrowBalances[account][config.token] += outputAmount;
         }
-    }
-
-    // @function setPerformanceFee
-    // @notice Updates the performance fee rate.
-    // @param [uint256] newFee The new fee rate as a decimal.
-    function setPerformanceFee(uint256 newFee) external onlyRole(GOVERNOR_ROLE) {
-        performanceFee = newFee;
-        emit PerformanceFeeUpdated(newFee);
-    }
-
-    // @function collectFees
-    // @notice Collects fees from the total supply of tokens and transfers them to the governance address.
-    // @emits FeeCollected When fees are collected.
-    function collectFees() external onlyRole(GOVERNOR_ROLE) {
-        uint256 feeAmount = (totalSupply() * performanceFee) / 1e18;
-        axcToken.safeTransfer(msg.sender, feeAmount);
-        emit FeeCollected(feeAmount);
     }
 
     // @function flushToken
