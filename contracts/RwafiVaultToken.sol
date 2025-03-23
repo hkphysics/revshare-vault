@@ -30,9 +30,8 @@ contract RWAFiVault is ERC20Burnable, AccessControl, ReentrancyGuard {
     uint256 public performanceFee;
     
     mapping(address => mapping(IERC20 => uint256)) public escrowBalances;
+    mapping(IERC20 => uint256) public totalEscrowBalance;
 
-    event Bundled(address indexed user, uint256 amount);
-    event Unbundled(address indexed user, uint256 amount);
     event FeeCollected(uint256 amount);
     event PerformanceFeeUpdated(uint256 newFee);
 
@@ -68,11 +67,13 @@ contract RWAFiVault is ERC20Burnable, AccessControl, ReentrancyGuard {
     function depositEscrow(IERC20 token, uint256 amount) external nonReentrant {
         token.safeTransferFrom(msg.sender, address(this), amount);
         escrowBalances[msg.sender][token] += amount;
+	totalEscrowBalance[token] += amount;
     }
 
     function withdrawEscrow(IERC20 token, uint256 amount) external nonReentrant {
         require(escrowBalances[msg.sender][token] >= amount, "Insufficient escrow");
         escrowBalances[msg.sender][token] -= amount;
+	totalEscrowBalance[token] -= amount;
         token.safeTransfer(msg.sender, amount);
     }
 
@@ -119,7 +120,7 @@ contract RWAFiVault is ERC20Burnable, AccessControl, ReentrancyGuard {
 
     function flushToken(IERC20 token) external onlyRole(GOVERNOR_ROLE) {
         require(token != IERC20(address(this)), "Cannot flush vault token");
-        uint256 balance = token.balanceOf(address(this));
+        uint256 balance = token.balanceOf(address(this)) - totalEscrowBalance[token];
         token.safeTransfer(msg.sender, balance);
     }
 
